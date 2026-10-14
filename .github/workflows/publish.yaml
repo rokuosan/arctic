@@ -1,34 +1,29 @@
-name: Deploy
+name: "Publish v3"
+on: [push]
 
-on:
-  push:
-    branches:
-      - main
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+env:
+  AURI_GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  AURI_NPM_TOKEN: ${{secrets.AURI_NPM_TOKEN}}
 
 jobs:
-  build-and-deploy:
-    name: Deploy
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  publish:
+    name: Publish package and release with Auri
     runs-on: ubuntu-latest
+    if: github.repository == 'pilcrowonpaper/arctic' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      id-token: write
     steps:
-      - name: Checkout repository
+      - name: Setup actions
         uses: actions/checkout@v4
-
-      - name: Configure Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
         with:
-          path: "./arcticjs.dev"
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          ref: ${{ github.ref }}
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: "https://registry.npmjs.org/"
+      - name: Install dependencies
+        run: npm install
+      - name: Build and publish package and release
+        run: npx auri publish
